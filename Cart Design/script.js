@@ -434,12 +434,28 @@ export function SaveDataToLocalStorage(database) {
 
  //SaveDataToLocalStorage(database);
 
-export function loadDatabaseFromLocalStorage() {
+ export function loadDatabaseFromLocalStorage() {
     console.log("database LOADED:>> ");
     for (const key in database) {
-        database[key] = JSON.parse(localStorage.getItem(key)) || database[key];
+        try {
+            const item = localStorage.getItem(key);
+
+            if (item) {
+                // Parse the item only if it exists
+                database[key] = JSON.parse(item);
+            } else {
+                // Initialize the key in localStorage if it doesn't exist
+                localStorage.setItem(key, JSON.stringify(database[key]));
+            }
+        } catch (error) {
+            console.error(`Error loading key "${key}":`, error);
+            // If there's an issue parsing, reset the key to its default value
+            localStorage.setItem(key, JSON.stringify(database[key]));
+        }
     }
 }
+
+loadDatabaseFromLocalStorage();
 
 // load data from local storage
 
