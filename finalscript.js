@@ -1,8 +1,8 @@
 // current user
 
 export const database = {
-  currentUser: [],
-  GuestCart: [],
+  currentUser: null,
+  GuestCart: [{id: 3, price: 7999.99, name: "IWC Portugieser Chronograph", quantity: 1},{id: 4, price: 7999.99, name: "IWC Portugieser Chronograph", quantity: 2}],
   users: [
     {
       id: 1,
@@ -10,7 +10,7 @@ export const database = {
       lastName: "Doe",
       email: "johndoe@example.com",
       password: "securepassword123",
-      cart: [],
+      cart: [{id: 3, price: 7999.99, name: "IWC Portugieser Chronograph", quantity: 5},{id: 4, price: 7999.99, name: "IWC Portugieser Chronograph", quantity: 2}],
       accountType: "Customer",
       products: [],
       orderIds: [101, 102, 103],
@@ -28,7 +28,7 @@ export const database = {
       lastName: "Smith",
       email: "janesmith@example.com",
       password: "anothersecurepassword456",
-      cart: [],
+      cart: [{id: 3, price: 7999.99, name: "IWC Portugieser Chronograph", quantity: 1},{id: 4, price: 7999.99, name: "IWC Portugieser Chronograph", quantity: 2}],
       accountType: "Seller",
       products: [1, 2, 10, 11, 12, 13, 14, 15],
       orderIds: [104, 105],
@@ -480,7 +480,7 @@ export const database = {
       brandId: 1,
       date: "2023-11-01",
       images: [
-        "/E-commerce/Brands/cartier/cart2.jpg",
+        "/Brands/cartier/cart2.jpg",
         "https://www.cartier.com/ballon-bleu2.jpg",
       ],
       gender: "Men",
@@ -494,7 +494,7 @@ export const database = {
       brandId: 2,
       date: "2023-10-15",
       images: [
-        "/E-commerce/Brands/Rolex/rolex3.jpeg",
+        "/Brands/Rolex/rolex3.jpeg",
         "https://www.rolex.com/submariner2.jpg",
       ],
       gender: "Men",
@@ -508,7 +508,7 @@ export const database = {
       brandId: 3,
       date: "2023-11-20",
       images: [
-        "/E-commerce/Brands/IWC/iwc2.jpeg",
+        "/Brands/IWC/iwc2.jpeg",
         "https://www.iwc.com/portugieser2.jpg",
       ],
       gender: "Men",
@@ -522,7 +522,7 @@ export const database = {
       brandId: 4,
       date: "2023-12-01",
       images: [
-        "/E-commerce/Brands/Panerai/pan2.jpeg",
+        "/Brands/Panerai/pan2.jpeg",
         "https://www.panerai.com/luminor2.jpg",
       ],
       gender: "Men",
@@ -536,7 +536,7 @@ export const database = {
       brandId: 5,
       date: "2023-11-25",
       images: [
-        "/E-commerce/Brands/Seiko/sek2.jpeg",
+        "/Brands/Seiko/sek2.jpeg",
         "https://www.seiko.com/prospex2.jpg",
       ],
       gender: "Men",
@@ -550,7 +550,7 @@ export const database = {
       brandId: 1,
       date: "2023-12-10",
       images: [
-        "/E-commerce/Brands/cartier/cart4.jpeg",
+        "/Brands/cartier/cart4.jpeg",
         "https://www.cartier.com/tank2.jpg",
       ],
       gender: "Women",
@@ -564,7 +564,7 @@ export const database = {
       brandId: 2,
       date: "2023-10-10",
       images: [
-        "/E-commerce/Brands/Rolex/rolex1.jpeg",
+        "/Brands/Rolex/rolex1.jpeg",
         "https://www.rolex.com/daytona2.jpg",
       ],
       gender: "Men",
@@ -578,7 +578,7 @@ export const database = {
       brandId: 3,
       date: "2023-11-05",
       images: [
-        "/E-commerce/Brands/IWC/iwc1.jpeg",
+        "/Brands/IWC/iwc1.jpeg",
         "https://www.iwc.com/pilot2.jpg",
       ],
       gender: "Men",
@@ -592,7 +592,7 @@ export const database = {
       brandId: 4,
       date: "2023-11-30",
       images: [
-        "/E-commerce/Brands/Panerai/pan1.jpeg",
+        "/Brands/Panerai/pan1.jpeg",
         "https://www.panerai.com/radiomir2.jpg",
       ],
       gender: "Men",
@@ -606,7 +606,7 @@ export const database = {
       brandId: 5,
       date: "2023-12-12",
       images: [
-        "/E-commerce/Brands/Seiko/sek2.jpeg",
+        "/Brands/Seiko/sek2.jpeg",
         "https://www.seiko.com/presage2.jpg",
       ],
       gender: "Women",
@@ -655,6 +655,29 @@ export function GetDataFromLocalStorage(database) {
   }
   return database;
 }
+
+ export function loadDatabaseFromLocalStorage() {
+    console.log("database LOADED:>> ");
+    for (const key in database) {
+        try {
+            const item = localStorage.getItem(key);
+
+            if (item) {
+                // Parse the item only if it exists
+                database[key] = JSON.parse(item);
+            } else {
+                // Initialize the key in localStorage if it doesn't exist
+                localStorage.setItem(key, JSON.stringify(database[key]));
+            }
+        } catch (error) {
+            console.error(`Error loading key "${key}":`, error);
+            // If there's an issue parsing, reset the key to its default value
+            localStorage.setItem(key, JSON.stringify(database[key]));
+        }
+    }
+}
+
+loadDatabaseFromLocalStorage();
 
 // Add New User
 export function AddUser(user) {
@@ -768,6 +791,19 @@ export function RemoveBrand(brand) {
 // get all orders
 export function GetAllOrders() {
   return JSON.parse(localStorage.getItem("orders"));
+}
+
+//get order by id
+export function GetOrderById(id) {
+  let order;
+  GetAllOrders().forEach((ord) => {
+    //console.log(ord)
+    if (ord.orderId == id) {
+      order = ord;
+      return;
+    }
+  });
+  return order;
 }
 
 // get Current User

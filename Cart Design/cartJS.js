@@ -8,9 +8,8 @@ import {
 import { loadnavbar } from "../navbar.js";
 window.addEventListener("load", function () {
   loadnavbar();
-});
 //loadDatabaseFromLocalStorage();
-let cart;
+var cart;
 //console.log(GetDataFromLocalStorage(database).currentUser);
 let currentuser = GetDataFromLocalStorage(database).currentUser;
 //console.log(database.currentUser);
@@ -18,22 +17,19 @@ let currentuser = GetDataFromLocalStorage(database).currentUser;
 const cartTable = document.getElementById("cartTable");
 const subtotalCell = document.getElementById("subtotal");
 let guestcart = JSON.parse(localStorage.getItem("GuestCart"));
-
 let itemToDelete = null; // To hold the item that the user wants to delete
 
 // Function to load the cart from the user data if logged in
 function loadUserCart() {
-  if (currentuser !== null) {
+  if (currentuser != null) {
     const user = GetUserById(currentuser);
     //console.log(user);
 
     if (user.cart) {
       cart = user.cart;
-      loadCart(); // Load the cart if available
     }
   } else {
-    cart = guestcart; // If no user is logged in, use guest cart
-    loadCart(); // Load cart for guest
+    cart = JSON.parse(localStorage.getItem("GuestCart")); // If no user is logged in, use guest cart
   }
 }
 
@@ -53,15 +49,19 @@ function saveUserCart() {
 }
 
 // Load the cart based on whether the user is logged in or not
-loadUserCart();
-checkEmptyCart();
+loadCart(); // Load cart for guest
 // Check if cart is empty or not
 
 
 // Load the cart data
 function loadCart() {
   cartTable.innerHTML = ""; // Clear the table before reloading it
+  //let currentuser = GetDataFromLocalStorage(database).currentUser;
 
+  loadUserCart();
+  checkEmptyCart();
+
+  //console.log(cart);
   cart.forEach((item) => {
     let product = GetProductById(item.id);
 
@@ -71,7 +71,7 @@ function loadCart() {
 
     row.innerHTML = `
            <td  style="width: 20%;" > <div >
-            <img src="${product.images[0]}" alt="${
+<img src="../${product.images[0]}"
       product.name
     }" class="img-thumbnail" style="height:7em " >
            </td>
@@ -136,7 +136,6 @@ function checkEmptyCart() {
       location.assign("/E-commerce/Home.html"); // go to watch to products
     }); // fire here
   } else {
-    loadCart()
     // can't fire here  where problem ? need debug this code
     Checkoutbtn.disabled = false;
      const newButton = Checkoutbtn.cloneNode(true);
@@ -174,30 +173,22 @@ function deleteRow(id) {
     }
   } else {
     // Handle user cart (remove item from user cart)
-    let user = GetUserById(currentuser);
-user.cart = user.cart.filter(item => item.id !== id);
-console.log(user.cart);
-SaveDataToLocalStorage(database);
-
-
-    //console.log(user.cart[1]);
-//     let itemIndex = user.cart.findIndex((item) => item.id === id);
-    
-//  // console.log(itemIndex);
-//     if (itemIndex > -1) {
-//       user.cart.splice(itemIndex, 1); // Remove item from user cart
-//     //  console.log(user.cart);
-//       SaveDataToLocalStorage(database);
-//     }
+    let itemIndex = database.users[currentuser-1].cart.findIndex((item) => item.id === id);
+    database.users[currentuser-1].cart.splice(itemIndex, 1);
+    SaveDataToLocalStorage(database);
   }
-  loadCart(); // Re-load the cart to reflect the changes
+
   saveUserCart(); // Save the updated cart data
+  loadCart(); // Re-load the cart to reflect the changes
+
+
 }
 
 // Attach event listeners to delete buttons and quantity input fields
 function attachEventListeners() {
   // Delete button event listener
   const deleteButtons = document.querySelectorAll(".delete-btn");
+  
   deleteButtons.forEach((button) => {
     button.addEventListener("click", function () {
       const itemId = parseInt(button.getAttribute("data-id"));
@@ -245,14 +236,15 @@ function attachEventListeners() {
 function updateCartItemQuantity(id, quantity) {
   if (database.currentUser == null) {
     // Update guest cart
-    let item = database.guestCart.find((item) => item.id === id);
+    let item = database.GuestCart.find((item) => item.id === id);
     if (item) {
       item.quantity = quantity;
     }
   } else {
     // Update user cart
-    let user = database.currentUser;
-    let item = user.cart.find((item) => item.id === id);
+    let user = GetUserById(database.currentUser);
+    let item =  database.users[currentuser-1].cart.find((item) => item.id === id);
+    console.log(item)
     if (item) {
       item.quantity = quantity;
     }
@@ -290,3 +282,4 @@ function getTotal() {
   // Update the subtotal display in the tfoot section
   subtotalCell.textContent = total.toFixed(2);
 }
+});

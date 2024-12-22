@@ -1,21 +1,26 @@
-import { SaveDataToLocalStorage, GetUserById, database, GetProductById } from './script.js';
+import { SaveDataToLocalStorage, GetUserById, database, GetProductById , GetOrderById } from '../finalscript.js';
+
+
+let itemToDelete = null; // To hold the item that the user wants to delete
 
 // Ensure the database is saved to local storage
 if (!localStorage.getItem('users')) {
-    SaveDataToLocalStorage(database);
+    database =JSON.parse(localStorage.getItem("database"));
 }
 
 // Ensure currentUser is initialized
 if (!localStorage.getItem('currentUser')) {
-    localStorage.setItem('currentUser', JSON.stringify(database.currentUser));
+    //localStorage.setItem('currentUser', JSON.stringify(database.currentUser));
     console.log('Initialized currentUser in local storage.');
 }
 
-// Get the current user by ID (e.g., hardcoded ID or retrieved dynamically)
-const userId = 1; // Replace with dynamic ID if needed
-let currentUser = GetUserById(userId);
+let userID=database.currentUser;
+// Get the current user by ID
 
-if (!currentUser) {
+let currentUser = GetUserById(userID);
+console.log(database);
+
+if (currentUser == null) {
     console.error("No user found with the given ID.");
 } else {
     console.log('Current user loaded:', currentUser);
@@ -31,7 +36,11 @@ const saveButton = document.getElementById('saveButton');
 function populateUserData(user) {
     // Update user name
     const userNameElement = document.getElementById('user-name');
-    if (userNameElement) userNameElement.textContent = user.name || 'Not provided';
+    if (userNameElement) userNameElement.textContent = user.firstName + " " + user.lastName || 'Not provided';
+
+    //username in image
+    const userNameElementinImag = document.getElementById('Hi-userName');
+    if (userNameElementinImag) userNameElementinImag.textContent = user.firstName + " " + user.lastName || 'Not provided';
 
     // Update user email
     const userEmailElement = document.getElementById('user-email');
@@ -64,6 +73,7 @@ function populateUserData(user) {
 
 // Helper function to populate order history
 function populateOrderHistory(user) {
+    console.log(user)
     const ordersContainer = document.querySelector('.orders-table-body');
     if (!ordersContainer) return; // Exit if the container is not found
 
@@ -71,7 +81,7 @@ function populateOrderHistory(user) {
 
     // Fetch user orders from database
     const userOrders = database.orders.filter(order => order.customerId === user.id);
-
+    console.log(userOrders);
     userOrders.forEach(order => {
         const tableRow = document.createElement('tr');
 
@@ -88,6 +98,11 @@ function populateOrderHistory(user) {
         });
         productsCell.textContent = productNames.join(', ');
 
+        //Addrss cell
+        const addressCell = document.createElement('td');
+        let orderAddrss = GetOrderById(order.orderId).customerDetails.address.city + " " + GetOrderById(order.orderId).customerDetails.address.street  || 'Unknown';        ;
+        addressCell.textContent = orderAddrss;
+
         // Total Price cell
         const totalPriceCell = document.createElement('td');
         totalPriceCell.textContent = `$${order.totalPrice.toFixed(2)}`;
@@ -98,24 +113,41 @@ function populateOrderHistory(user) {
         statusBadge.className = 'badge rounded-pill';
 
         // Assign status-specific classes
-        if (order.status === 'Shipped') {
+        if (order.status === 'Delivered' || order.status === 'Shipped') {
             statusBadge.classList.add('bg-success');
         } else if (order.status === 'Pending' || order.status === 'Processing') {
             statusBadge.classList.add('bg-warning');
         } else {
-            statusBadge.classList.add('bg-secondary');
+            statusBadge.classList.add('bg-danger');
         }
         statusBadge.textContent = order.status;
         statusCell.appendChild(statusBadge);
+        
+        //Cancel button
+        const cancelBtnCell = document.createElement('td');
+
+        if(order.status==="Processing"){
+            cancelBtnCell.innerHTML=`<Button data-id = ${order.orderId} class = "cancel-btn btn-sm btn-danger ">Cancel</Button>`
+            orderIdCell.textContent = order.orderId;
+        }
+        
 
         // Append cells to row
         tableRow.appendChild(orderIdCell);
         tableRow.appendChild(productsCell);
+        tableRow.appendChild(addressCell);
         tableRow.appendChild(totalPriceCell);
         tableRow.appendChild(statusCell);
+        if(cancelBtnCell){
+            tableRow.appendChild(cancelBtnCell);
+        }
 
         // Append row to table body
         ordersContainer.appendChild(tableRow);
+        console.log(userOrders)
+
+        attachEventListeners();
+
     });
 }
 
@@ -133,6 +165,9 @@ function makeEditable() {
         field.replaceWith(input);
     });
 
+
+
+    //cancel order function
     // // Replace content with input fields for address components
     // const streetElement = document.getElementById('edit-street');
     // const cityElement = document.getElementById('edit-city');
@@ -183,7 +218,7 @@ function saveChanges() {
         console.error("Failed to update user: User not found in database.");
     }
 
-    database.currentUser = currentUser;
+    //database.currentUser = currentUser;
     SaveDataToLocalStorage(database);
 
     //to change input fields back to Paragraphs
@@ -206,6 +241,63 @@ function saveChanges() {
     console.log('Profile updated successfully and saved to localStorage!', currentUser);
 }
 
+function attachEventListeners() {
+    // Delete button event listener
+    const deleteButtons = document.querySelectorAll(".cancel-btn");
+
+    console.log(deleteButtons);
+    
+    deleteButtons.forEach((button) => {
+      button.addEventListener("click", function () {
+        console.log("cc")
+        const itemId = parseInt(button.getAttribute("data-id"));
+        // Set the item to be deleted
+         itemToDelete = itemId;
+  
+        // Show the modal
+        const modal = new bootstrap.Modal(
+          document.getElementById("confirmDeleteModal")
+        );
+        modal.show();
+      });
+    });
+  
+    // Confirm deletion action
+    document
+      .getElementById("confirmDeleteButton")
+      .addEventListener("click", function () {
+        if (itemToDelete !== null) {
+        //  console.log(itemToDelete);
+          cancelRow(itemToDelete); // Perform the deletion
+        }
+  
+        // Hide the modal
+        const modal = bootstrap.Modal.getInstance(
+          document.getElementById("confirmDeleteModal")
+        );
+        modal.hide();
+      });
+  }
+
+  function cancelRow(itemId){
+    let orderIndex=database.orders.findIndex((order)=>
+        order.orderId === itemId
+    );
+
+    database.orders[orderIndex].status = "Canceled";
+
+    SaveDataToLocalStorage(database);
+
+
+populateOrderHistory(currentUser);
+
+    
+    console.log(orderIndex)
+    const modal = bootstrap.Modal.getInstance(
+        document.getElementById("confirmDeleteModal")
+      );
+      modal.hide();
+  }
 // Event Listeners
 editButton.addEventListener('click', makeEditable);
 saveButton.addEventListener('click', saveChanges);

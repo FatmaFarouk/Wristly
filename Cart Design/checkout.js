@@ -205,12 +205,12 @@ console.log(database.orders)
             let NewOrderID = generateOrderID();
             updateStock();
             addOrderIdToUser(currentuser, NewOrderID);
-            userr.cart = [];
+            database.users[currentuser-1].cart=[];
 
             let order = {
                 orderId: NewOrderID,
                 items: detailedCart,
-                customerId: database.currentUser.id,
+                customerId: database.currentUser,
                 totalPrice: total,
                 status: "Processing",
                 date: CurrentDate,
